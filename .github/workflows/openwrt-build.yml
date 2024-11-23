@@ -1,0 +1,39 @@
+name: Build OpenWrt
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Source
+      uses: actions/checkout@v3
+
+    - name: Install Dependencies
+      run: |
+        sudo apt update
+        sudo apt install -y build-essential git wget flex bison python3 unzip
+
+    - name: Clone OpenWrt Repository
+      run: |
+        git clone https://git.openwrt.org/openwrt/openwrt.git
+        cd openwrt
+        ./scripts/feeds update -a
+        ./scripts/feeds install -a
+        make menuconfig
+
+    - name: Build Firmware
+      run: |
+        cd openwrt
+        make -j$(nproc)
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: openwrt-firmware
+        path: openwrt/bin/
